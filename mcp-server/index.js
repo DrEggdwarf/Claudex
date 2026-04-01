@@ -4,13 +4,13 @@ const {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } = require('@modelcontextprotocol/sdk/types.js');
-const { getPokedex, addBuddy, setHandle } = require('../lib/storage');
+const { getPokedex, addBuddy, setHandle, setShareCode } = require('../lib/storage');
 const { renderBuddy, renderPokedex } = require('../lib/ascii-art');
 
 const API_BASE = process.env.CLAUDEX_API || 'http://217.69.13.112:3000/api';
 
 const server = new Server(
-  { name: 'claudex', version: '0.4.0' },
+  { name: 'claudex', version: '0.5.0' },
   { capabilities: { tools: {} } }
 );
 
@@ -18,11 +18,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
       name: 'claudex_register',
-      description: "Enregistre ton buddy sur le serveur Claudex. Cree ton code de partage pour que d'autres puissent attraper ton buddy.",
+      description: "Enregistre ton buddy sur le serveur Claudex. Un code de partage unique est genere automatiquement.",
       inputSchema: {
         type: 'object',
         properties: {
-          handle: { type: 'string', description: 'Code de partage choisi (pseudo unique)' },
+          handle: { type: 'string', description: 'Pseudo du dresseur' },
           species: { type: 'string', description: 'Espece du buddy' },
           rarity: { type: 'string', description: 'Rarete du buddy' },
           eye: { type: 'string', description: 'Type de yeux' },
@@ -36,18 +36,18 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: 'claudex_catch',
-      description: "Attrape le buddy d'un autre utilisateur en entrant son code de partage. L'ajoute au Claudex local.",
+      description: "Attrape le buddy d'un autre utilisateur en entrant son code de partage (format XXXX-XXXX).",
       inputSchema: {
         type: 'object',
         properties: {
-          code: { type: 'string', description: "Code de partage de l'utilisateur cible" }
+          code: { type: 'string', description: "Code de partage (format XXXX-XXXX)" }
         },
         required: ['code']
       }
     },
     {
       name: 'claudex_pokedex',
-      description: 'Affiche le Claudex local : collection de buddies attrapes en ASCII art + stats.',
+      description: 'Affiche le Claudex local : collection de buddies attrapes.',
       inputSchema: {
         type: 'object',
         properties: {}
@@ -55,7 +55,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: 'claudex_mybuddy',
-      description: "Affiche la carte de ton propre buddy tel qu'il est enregistre sur le serveur Claudex.",
+      description: "Affiche la carte de ton propre buddy et ton code de partage.",
       inputSchema: {
         type: 'object',
         properties: {}
@@ -84,9 +84,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         setHandle(handle);
+        setShareCode(data.share_code);
 
         const buddyCard = renderBuddy({
           handle, species, rarity, eye, hat, shiny, stats, github,
+          share_code: data.share_code,
           collectedAt: new Date().toISOString()
         });
 
@@ -94,18 +96,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [{
             type: 'text',
             text: [
-              `Buddy enregistre avec succes !`,
+              `Buddy enregistre !`,
               ``,
               buddyCard,
               ``,
               `+-----------------------------+`,
-              `| Ton code de partage :       |`,
+              `| TON CODE DE PARTAGE :       |`,
               `|                             |`,
-              `|   ${handle.padEnd(25)} |`,
+              `|     ${data.share_code.padEnd(23)} |`,
               `|                             |`,
               `| Partage ce code pour que    |`,
               `| d'autres attrapent ton      |`,
-              `| buddy !                     |`,
+              `| buddy.                      |`,
               `+-----------------------------+`
             ].join('\n')
           }]
@@ -119,23 +121,25 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { code } = args;
 
       try {
-        const resp = await fetch(`${API_BASE}/buddy/${encodeURIComponent(code)}`);
+        const resp = await fetch(`${API_BASE}/catch/${encodeURIComponent(code.toUpperCase().trim())}`);
         const buddy = await resp.json();
 
         if (!resp.ok) {
-          return { content: [{ type: 'text', text: `Aucun buddy trouve pour le code "${code}". Verifie le code de partage !` }] };
+          return { content: [{ type: 'text', text: `Code "${code}" invalide. Verifie le code de partage (format XXXX-XXXX).` }] };
         }
 
-        buddy.handle = code;
         const result = addBuddy(buddy);
 
-        const art = renderBuddy({ ...buddy, collectedAt: result.added ? result.entry.collectedAt : buddy.collectedAt });
+        const art = renderBuddy({
+          ...buddy,
+          collectedAt: result.added ? result.entry.collectedAt : (buddy.collectedAt || new Date().toISOString())
+        });
 
         if (!result.added) {
           return {
             content: [{
               type: 'text',
-              text: `Tu as deja attrape le buddy de ${code} !\n\n${art}`
+              text: `Deja dans ton Claudex !\n\n${art}`
             }]
           };
         }
@@ -157,20 +161,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       const statsLines = [];
       if (pokedex.myHandle) {
-        statsLines.push(`Mon code: ${pokedex.myHandle}`);
-      } else {
-        statsLines.push(`Pas encore enregistre -- choisis l'option 4 pour creer ton code de partage`);
+        statsLines.push(`Dresseur: ${pokedex.myHandle}`);
       }
-      statsLines.push(`Total attrape: ${pokedex.stats.total}`);
+      if (pokedex.shareCode) {
+        statsLines.push(`Code: ${pokedex.shareCode}`);
+      }
+      if (!pokedex.myHandle) {
+        statsLines.push(`Non enregistre -- /claudex > option 4`);
+      }
+      statsLines.push(`Total: ${pokedex.stats.total}`);
       if (pokedex.stats.shinies > 0) statsLines.push(`Shinies: ${pokedex.stats.shinies}`);
-
-      if (Object.keys(pokedex.stats.byRarity).length > 0) {
-        statsLines.push('');
-        statsLines.push('Par rarete:');
-        for (const [rarity, count] of Object.entries(pokedex.stats.byRarity)) {
-          statsLines.push(`  ${rarity}: ${count}`);
-        }
-      }
 
       return {
         content: [{
@@ -187,7 +187,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return {
           content: [{
             type: 'text',
-            text: `Tu n'es pas encore enregistre.\n\nUtilise /claudex puis option 4 pour enregistrer ton buddy et obtenir ton code de partage.`
+            text: `Non enregistre. Utilise /claudex > option 4 pour enregistrer ton buddy.`
           }]
         };
       }
@@ -197,26 +197,25 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const buddy = await resp.json();
 
         if (!resp.ok) {
-          return { content: [{ type: 'text', text: `Impossible de recuperer ton buddy depuis le serveur.` }] };
+          return { content: [{ type: 'text', text: `Impossible de recuperer ton buddy.` }] };
         }
 
-        buddy.handle = pokedex.myHandle;
         const art = renderBuddy(buddy);
 
         return {
           content: [{
             type: 'text',
             text: [
-              `Voici ton buddy :`,
+              `Ton buddy :`,
               ``,
               art,
               ``,
-              `Code de partage: ${pokedex.myHandle}`
+              `Code de partage: ${buddy.share_code || pokedex.shareCode || '???'}`
             ].join('\n')
           }]
         };
       } catch (e) {
-        return { content: [{ type: 'text', text: `Erreur de connexion au serveur: ${e.message}` }] };
+        return { content: [{ type: 'text', text: `Erreur de connexion: ${e.message}` }] };
       }
     }
 

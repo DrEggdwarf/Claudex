@@ -1,12 +1,15 @@
 const express = require('express');
-const { getDb } = require('./db');
+const { getDb, getUniqueShareCode } = require('./db');
 
 const app = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
-// POST /api/register — Enregistre un buddy
+// Normalise species/rarity to lowercase
+function norm(s) { return (s || '').toLowerCase().trim(); }
+
+// POST /api/register
 app.post('/api/register', (req, res) => {
   const { handle, species, rarity, eye, hat, shiny, stats, github } = req.body;
 
@@ -15,31 +18,46 @@ app.post('/api/register', (req, res) => {
   }
 
   const db = getDb();
-  const stmt = db.prepare(`
-    INSERT INTO buddies (handle, species, rarity, eye, hat, shiny, stats, github)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(handle) DO UPDATE SET
-      species = excluded.species,
-      rarity = excluded.rarity,
-      eye = excluded.eye,
-      hat = excluded.hat,
-      shiny = excluded.shiny,
-      stats = excluded.stats,
-      github = excluded.github,
-      registered_at = CURRENT_TIMESTAMP
-  `);
 
-  stmt.run(handle, species, rarity, eye || null, hat || null, shiny ? 1 : 0, JSON.stringify(stats || {}), github || null);
-  res.json({ ok: true, handle });
+  // Check if already registered
+  const existing = db.prepare('SELECT share_code FROM buddies WHERE handle = ?').get(handle);
+
+  if (existing && existing.share_code) {
+    // Update buddy data, keep same share code
+    const stmt = db.prepare(`
+      UPDATE buddies SET species=?, rarity=?, eye=?, hat=?, shiny=?, stats=?, github=?, registered_at=CURRENT_TIMESTAMP
+      WHERE handle=?
+    `);
+    stmt.run(norm(species), norm(rarity), eye || null, hat || null, shiny ? 1 : 0, JSON.stringify(stats || {}), github || null, handle);
+    res.json({ ok: true, handle, share_code: existing.share_code });
+  } else {
+    const share_code = getUniqueShareCode();
+    const stmt = db.prepare(`
+      INSERT INTO buddies (handle, share_code, species, rarity, eye, hat, shiny, stats, github)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(handle) DO UPDATE SET
+        share_code = excluded.share_code,
+        species = excluded.species,
+        rarity = excluded.rarity,
+        eye = excluded.eye,
+        hat = excluded.hat,
+        shiny = excluded.shiny,
+        stats = excluded.stats,
+        github = excluded.github,
+        registered_at = CURRENT_TIMESTAMP
+    `);
+    stmt.run(handle, share_code, norm(species), norm(rarity), eye || null, hat || null, shiny ? 1 : 0, JSON.stringify(stats || {}), github || null);
+    res.json({ ok: true, handle, share_code });
+  }
 });
 
-// GET /api/buddy/:handle — Récupère un buddy par handle
+// GET /api/buddy/:handle — by handle
 app.get('/api/buddy/:handle', (req, res) => {
   const db = getDb();
   const buddy = db.prepare('SELECT * FROM buddies WHERE handle = ?').get(req.params.handle);
 
   if (!buddy) {
-    return res.status(404).json({ error: 'Buddy non trouvé' });
+    return res.status(404).json({ error: 'Buddy non trouve' });
   }
 
   buddy.stats = JSON.parse(buddy.stats || '{}');
@@ -47,33 +65,22 @@ app.get('/api/buddy/:handle', (req, res) => {
   res.json(buddy);
 });
 
-// POST /api/ping — Envoie un ping (demande de collection)
-app.post('/api/ping', (req, res) => {
-  const { from_handle, to_handle } = req.body;
+// GET /api/catch/:code — by share code
+app.get('/api/catch/:code', (req, res) => {
+  const db = getDb();
+  const code = req.params.code.toUpperCase().trim();
+  const buddy = db.prepare('SELECT * FROM buddies WHERE share_code = ?').get(code);
 
-  if (!from_handle || !to_handle) {
-    return res.status(400).json({ error: 'from_handle et to_handle sont requis' });
+  if (!buddy) {
+    return res.status(404).json({ error: 'Code de partage invalide' });
   }
 
-  const db = getDb();
-
-  const from = db.prepare('SELECT handle FROM buddies WHERE handle = ?').get(from_handle);
-  const to = db.prepare('SELECT handle FROM buddies WHERE handle = ?').get(to_handle);
-
-  if (!from) return res.status(404).json({ error: `Handle "${from_handle}" non enregistré` });
-  if (!to) return res.status(404).json({ error: `Handle "${to_handle}" non enregistré` });
-
-  const stmt = db.prepare('INSERT INTO pings (from_handle, to_handle) VALUES (?, ?)');
-  const result = stmt.run(from_handle, to_handle);
-
-  const buddy = db.prepare('SELECT * FROM buddies WHERE handle = ?').get(to_handle);
   buddy.stats = JSON.parse(buddy.stats || '{}');
   buddy.shiny = !!buddy.shiny;
-
-  res.json({ ok: true, pingId: result.lastInsertRowid, buddy });
+  res.json(buddy);
 });
 
-// GET /api/search — Recherche de buddies
+// GET /api/search
 app.get('/api/search', (req, res) => {
   const { species, rarity, shiny } = req.query;
   const db = getDb();
@@ -83,11 +90,11 @@ app.get('/api/search', (req, res) => {
 
   if (species) {
     query += ' AND species = ?';
-    params.push(species);
+    params.push(norm(species));
   }
   if (rarity) {
     query += ' AND rarity = ?';
-    params.push(rarity);
+    params.push(norm(rarity));
   }
   if (shiny !== undefined) {
     query += ' AND shiny = ?';
@@ -105,7 +112,7 @@ app.get('/api/search', (req, res) => {
   res.json(buddies);
 });
 
-// GET /api/leaderboard — Top buddies
+// GET /api/leaderboard
 app.get('/api/leaderboard', (req, res) => {
   const db = getDb();
 
