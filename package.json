@@ -1,0 +1,9 @@
+{
+  "name": "claudex",
+  "version": "0.1.0",
+  "description": "Plugin Claudex — Pokédex de buddies Claude Code",
+  "main": "mcp-server/index.js",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}

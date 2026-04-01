@@ -1,0 +1,6 @@
+{
+  "name": "claudex",
+  "version": "0.2.0",
+  "description": "Pokédex de buddies Claude Code — collectez-les tous !",
+  "commands": ["claudex"]
+}
