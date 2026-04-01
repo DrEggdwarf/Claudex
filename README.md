@@ -73,49 +73,37 @@ Une seule commande : **`/claudex`**
 ### Exemple de buddy dans le Claudex
 
 ```
-╔══════════════════════════════════════╗
-║ DRAGON                      ✨ SHINY║
-║ ★ LEGENDARY ★                       ║
-║                                      ║
-║          /\_                          ║
-║         / o >                        ║
-║        |  ^  \                       ║
-║        /\/\/\  \                     ║
-║       |________|                     ║
-║                                      ║
-║ Dresseur: @robin                     ║
-║ GitHub:   github.com/DrEggdwarf     ║
-║ Attrapé:  01/04/2026                 ║
-║                                      ║
-║ DEBUGG   ████████░░ 75               ║
-║ PATIENCE ██████░░░░ 60               ║
-║ CHAOS    ████░░░░░░ 45               ║
-║ WISDOM   ████████░░ 80               ║
-╚══════════════════════════════════════╝
+╔══════════════════════════════════╗
+║ DRAGON ✨ SHINY                  ║
+║ ★ LEGENDARY ★                   ║
+║                                  ║
+║    /^\  /^\                      ║
+║   <  ◉  ◉  >                    ║
+║   (   ~~   )                     ║
+║    `-vvvv-´                      ║
+║                                  ║
+║ Dresseur: @robin                 ║
+║ GitHub:   github.com/DrEggdwarf ║
+║ Attrapé:  01/04/2026             ║
+║                                  ║
+║ DEBUGGI ████████░░  75           ║
+║ PATIENC ██████░░░░  60           ║
+║ CHAOS   ████░░░░░░  45           ║
+║ WISDOM  ████████░░  80           ║
+║ SNARK   ██████░░░░  55           ║
+╚══════════════════════════════════╝
 ```
 
 ## Les 18 espèces
 
-| Espèce | Rareté possible |
-|--------|----------------|
-| 🐱 Cat | Common - Rare |
-| 🐶 Dog | Common - Rare |
-| 🐰 Rabbit | Common - Uncommon |
-| 🐹 Hamster | Common - Uncommon |
-| 🐢 Turtle | Common - Rare |
-| 🐍 Snake | Uncommon - Epic |
-| 🦊 Fox | Uncommon - Epic |
-| 🐧 Penguin | Uncommon - Rare |
-| 🦉 Owl | Rare - Epic |
-| 🐼 Panda | Rare - Epic |
-| 🤖 Robot | Rare - Epic |
-| 🦄 Unicorn | Rare - Legendary |
-| 🐺 Wolf | Rare - Legendary |
-| 🐉 Dragon | Epic - Legendary |
-| 🔥 Phoenix | Epic - Legendary |
-| 👻 Ghost | Epic - Legendary |
-| 🫧 Slime | Common - Rare |
-| 🦎 Axolotl | Rare - Legendary |
+| | | |
+|---|---|---|
+| 🦆 Duck | 🪿 Goose | 🫧 Blob |
+| 🐱 Cat | 🐉 Dragon | 🐙 Octopus |
+| 🦉 Owl | 🐧 Penguin | 🐢 Turtle |
+| 🐌 Snail | 👻 Ghost | 🦎 Axolotl |
+| 🦫 Capybara | 🌵 Cactus | 🤖 Robot |
+| 🐰 Rabbit | 🍄 Mushroom | 😺 Chonk |
 
 ## Architecture
 
