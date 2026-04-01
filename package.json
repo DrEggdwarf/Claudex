@@ -1,9 +1,19 @@
 {
   "name": "claudex",
-  "version": "0.1.0",
-  "description": "Plugin Claudex — Pokédex de buddies Claude Code",
-  "main": "mcp-server/index.js",
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0"
+  "version": "1.0.0",
+  "description": "Claudex -- Pokedex de buddies Claude Code. Collectez-les tous.",
+  "bin": {
+    "claudex": "./bin/claudex.js"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "README.md"
+  ],
+  "keywords": ["claude", "claude-code", "buddy", "pokedex", "cli"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DrEggdwarf/Claudex"
   }
 }
