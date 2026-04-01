@@ -10,7 +10,7 @@ const { renderBuddy, renderPokedex } = require('../lib/ascii-art');
 const API_BASE = process.env.CLAUDEX_API || 'http://217.69.13.112:3000/api';
 
 const server = new Server(
-  { name: 'claudex', version: '0.3.0' },
+  { name: 'claudex', version: '0.4.0' },
   { capabilities: { tools: {} } }
 );
 
@@ -18,13 +18,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
       name: 'claudex_register',
-      description: "Enregistre ton buddy sur le serveur Claudex. Crée ton code de partage pour que d'autres puissent attraper ton buddy.",
+      description: "Enregistre ton buddy sur le serveur Claudex. Cree ton code de partage pour que d'autres puissent attraper ton buddy.",
       inputSchema: {
         type: 'object',
         properties: {
           handle: { type: 'string', description: 'Code de partage choisi (pseudo unique)' },
-          species: { type: 'string', description: 'Espèce du buddy' },
-          rarity: { type: 'string', description: 'Rareté du buddy' },
+          species: { type: 'string', description: 'Espece du buddy' },
+          rarity: { type: 'string', description: 'Rarete du buddy' },
           eye: { type: 'string', description: 'Type de yeux' },
           hat: { type: 'string', description: 'Type de chapeau' },
           shiny: { type: 'boolean', description: 'Est-ce un shiny ?' },
@@ -47,7 +47,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: 'claudex_pokedex',
-      description: 'Affiche le Claudex local : collection de buddies attrapés en ASCII art + stats.',
+      description: 'Affiche le Claudex local : collection de buddies attrapes en ASCII art + stats.',
       inputSchema: {
         type: 'object',
         properties: {}
@@ -55,7 +55,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: 'claudex_mybuddy',
-      description: "Affiche la carte de ton propre buddy tel qu'il est enregistré sur le serveur Claudex.",
+      description: "Affiche la carte de ton propre buddy tel qu'il est enregistre sur le serveur Claudex.",
       inputSchema: {
         type: 'object',
         properties: {}
@@ -85,7 +85,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         setHandle(handle);
 
-        // Afficher la carte du buddy enregistré
         const buddyCard = renderBuddy({
           handle, species, rarity, eye, hat, shiny, stats, github,
           collectedAt: new Date().toISOString()
@@ -95,19 +94,19 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [{
             type: 'text',
             text: [
-              `✅ Buddy enregistré !`,
+              `Buddy enregistre avec succes !`,
               ``,
               buddyCard,
               ``,
-              `┌─────────────────────────────┐`,
-              `│ 🔑 Ton code de partage :    │`,
-              `│                             │`,
-              `│   ${handle.padEnd(25)} │`,
-              `│                             │`,
-              `│ Partage ce code pour que    │`,
-              `│ d'autres attrapent ton      │`,
-              `│ buddy !                     │`,
-              `└─────────────────────────────┘`
+              `+-----------------------------+`,
+              `| Ton code de partage :       |`,
+              `|                             |`,
+              `|   ${handle.padEnd(25)} |`,
+              `|                             |`,
+              `| Partage ce code pour que    |`,
+              `| d'autres attrapent ton      |`,
+              `| buddy !                     |`,
+              `+-----------------------------+`
             ].join('\n')
           }]
         };
@@ -124,7 +123,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const buddy = await resp.json();
 
         if (!resp.ok) {
-          return { content: [{ type: 'text', text: `Aucun buddy trouvé pour le code "${code}". Vérifie le code de partage !` }] };
+          return { content: [{ type: 'text', text: `Aucun buddy trouve pour le code "${code}". Verifie le code de partage !` }] };
         }
 
         buddy.handle = code;
@@ -136,7 +135,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           return {
             content: [{
               type: 'text',
-              text: `Tu as déjà attrapé le buddy de ${code} !\n\n${art}`
+              text: `Tu as deja attrape le buddy de ${code} !\n\n${art}`
             }]
           };
         }
@@ -144,7 +143,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return {
           content: [{
             type: 'text',
-            text: `🎉 Buddy attrapé !\n\n${art}\n\n📖 Total dans ton Claudex: ${result.pokedex.stats.total}`
+            text: `Nouveau buddy attrape !\n\n${art}\n\nTotal dans ton Claudex: ${result.pokedex.stats.total}`
           }]
         };
       } catch (e) {
@@ -158,16 +157,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       const statsLines = [];
       if (pokedex.myHandle) {
-        statsLines.push(`🔑 Mon code: ${pokedex.myHandle}`);
+        statsLines.push(`Mon code: ${pokedex.myHandle}`);
       } else {
-        statsLines.push(`⚠️  Pas encore enregistré — choisis l'option 4 pour créer ton code de partage`);
+        statsLines.push(`Pas encore enregistre -- choisis l'option 4 pour creer ton code de partage`);
       }
-      statsLines.push(`📖 Total attrapé: ${pokedex.stats.total}`);
-      if (pokedex.stats.shinies > 0) statsLines.push(`✨ Shinies: ${pokedex.stats.shinies}`);
+      statsLines.push(`Total attrape: ${pokedex.stats.total}`);
+      if (pokedex.stats.shinies > 0) statsLines.push(`Shinies: ${pokedex.stats.shinies}`);
 
       if (Object.keys(pokedex.stats.byRarity).length > 0) {
         statsLines.push('');
-        statsLines.push('Par rareté:');
+        statsLines.push('Par rarete:');
         for (const [rarity, count] of Object.entries(pokedex.stats.byRarity)) {
           statsLines.push(`  ${rarity}: ${count}`);
         }
@@ -188,7 +187,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return {
           content: [{
             type: 'text',
-            text: `⚠️ Tu n'es pas encore enregistré !\n\nUtilise /claudex → option 4 pour enregistrer ton buddy et obtenir ton code de partage.`
+            text: `Tu n'es pas encore enregistre.\n\nUtilise /claudex puis option 4 pour enregistrer ton buddy et obtenir ton code de partage.`
           }]
         };
       }
@@ -198,7 +197,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const buddy = await resp.json();
 
         if (!resp.ok) {
-          return { content: [{ type: 'text', text: `Impossible de récupérer ton buddy depuis le serveur.` }] };
+          return { content: [{ type: 'text', text: `Impossible de recuperer ton buddy depuis le serveur.` }] };
         }
 
         buddy.handle = pokedex.myHandle;
@@ -208,11 +207,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [{
             type: 'text',
             text: [
-              `🔬 Voici ton buddy :`,
+              `Voici ton buddy :`,
               ``,
               art,
               ``,
-              `🔑 Code de partage: ${pokedex.myHandle}`
+              `Code de partage: ${pokedex.myHandle}`
             ].join('\n')
           }]
         };
