@@ -1,0 +1,13 @@
+{
+  "name": "claudex-server",
+  "version": "0.1.0",
+  "description": "Serveur central Claudex — registre de buddies Claude Code",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "express": "^4.21.0"
+  }
+}
