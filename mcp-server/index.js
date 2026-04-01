@@ -7,7 +7,7 @@ const {
 const { getPokedex, addBuddy, setHandle } = require('../lib/storage');
 const { renderBuddy, renderPokedex } = require('../lib/ascii-art');
 
-const API_BASE = process.env.CLAUDEX_API || 'http://localhost:3000/api';
+const API_BASE = process.env.CLAUDEX_API || 'http://217.69.13.112:3000/api';
 
 const server = new Server(
   { name: 'claudex', version: '0.2.0' },
